@@ -30,7 +30,7 @@ const static char *TAG_MAIN = "MAIN";
 #define EXAMPLE_GEN_DIR2           16
 #define EXAMPLE_GEN_ENA2           4
 
-void app_main(void)
+void init_ports()
 {
     // Init Ports
     ESP_LOGI(TAG_MAIN, "Initialize MCPWM GPIOs");
@@ -38,9 +38,14 @@ void app_main(void)
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = BIT(EXAMPLE_GEN_STP0) | BIT(EXAMPLE_GEN_STP1) | BIT(EXAMPLE_GEN_STP2) |
                         BIT(EXAMPLE_GEN_DIR0) | BIT(EXAMPLE_GEN_DIR1) | BIT(EXAMPLE_GEN_DIR2) |
-                        BIT(EXAMPLE_GEN_ENA0) | BIT(EXAMPLE_GEN_ENA1) | BIT(EXAMPLE_GEN_ENA2) ,
+                        BIT(EXAMPLE_GEN_ENA0) | BIT(EXAMPLE_GEN_ENA1) | BIT(EXAMPLE_GEN_ENA2),
     };
     ESP_ERROR_CHECK(gpio_config(&gen_gpio_conf));
+}
+
+void app_main(void)
+{
+    init_ports();
 
     ESP_LOGI(TAG_MAIN, "Create timers");
     mcpwm_timer_handle_t timers[3];
@@ -126,3 +131,5 @@ void app_main(void)
     }
     vTaskDelay(pdMS_TO_TICKS(100));
 }
+
+
