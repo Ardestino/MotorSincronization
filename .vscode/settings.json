@@ -18,5 +18,9 @@
     "--background-index",
     "--query-driver=C:\\Users\\ramon\\.espressif\\tools\\xtensa-esp-elf\\esp-14.2.0_20241119\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-gcc.exe",
     "--compile-commands-dir=c:\\Users\\ramon\\Desktop\\Robots\\Minerva\\firmware\\ESP_IDF\\mcpwm_sync\\build"
-  ]
+  ],
+  "files.associations": {
+    "sdkconfig.h": "c",
+    "mcpwm_prelude.h": "c"
+  }
 }
