@@ -1,11 +1,7 @@
+#include <iostream>
 extern "C"
 {
-#include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_log.h"
 #include "driver/mcpwm_prelude.h"
-#include "driver/gpio.h"
 #include "sync_example.h"
 #include "sync_pwm.h"
 }
@@ -23,5 +19,6 @@ public:
 
 extern "C" void app_main(void)
 {
+    std::cout << "Hello, World!" << std::endl;
     example();
 }
