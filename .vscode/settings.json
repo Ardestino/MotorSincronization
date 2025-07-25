@@ -1,11 +1,11 @@
 {
   "C_Cpp.intelliSenseEngine": "default",
-  "idf.espIdfPathWin": "C:\\Users\\ramon\\esp\\v5.4.1\\esp-idf",
-  "idf.toolsPathWin": "C:\\Users\\ramon\\.espressif",
-  "idf.pythonInstallPath": "C:\\Users\\ramon\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+  "idf.espIdfPathWin": "C:\\Users\\JoseRamonNavarroMarq\\esp\\v5.4.1\\esp-idf",
+  "idf.toolsPathWin": "C:\\Users\\JoseRamonNavarroMarq\\.espressif",
+  "idf.pythonInstallPath": "C:\\Users\\JoseRamonNavarroMarq\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
   "idf.flashType": "UART",
-  "idf.portWin": "COM6",
-  "idf.monitorPort": "COM6",
+  "idf.portWin": "COM11",
+  "idf.monitorPort": "COM11",
   "idf.openOcdConfigs": [
     "interface/ftdi/esp32_devkitj_v1.cfg",
     "target/esp32.cfg"
