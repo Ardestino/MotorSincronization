@@ -2,7 +2,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "sync_pwm.h"
-#define EXAMPLE_SYNC_GPIO 33 // GPIO used for sync source
+#define EXAMPLE_SYNC_GPIO 5 // GPIO used for sync source
 
 const static char *TAG = "SYNC_PWM";
 

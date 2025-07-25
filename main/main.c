@@ -19,9 +19,9 @@
 #define EXAMPLE_TIMER_UPPERIOD1 (EXAMPLE_TIMER_PERIOD1 / 2) // 50% duty cycle
 #define EXAMPLE_TIMER_UPPERIOD2 (EXAMPLE_TIMER_PERIOD2 / 2) // 50% duty cycle
 
-#define EXAMPLE_GEN_STP0 23 // Verde
-#define EXAMPLE_GEN_DIR0 22 // Azul
-#define EXAMPLE_GEN_ENA0 21 // Amarillo
+#define EXAMPLE_GEN_STP0 22 // Verde
+#define EXAMPLE_GEN_DIR0 21 // Amarillo
+#define EXAMPLE_GEN_ENA0 23 // Azul 
 
 #define EXAMPLE_GEN_STP1 13
 #define EXAMPLE_GEN_DIR1 14
@@ -57,8 +57,6 @@ void setup_gpio()
 
 void start_pwm()
 {
-    init_ports();
-
     ESP_LOGI(TAG, "Create timers");
     mcpwm_timer_handle_t timers[3];
     const int time_period[3] = {EXAMPLE_TIMER_PERIOD0, EXAMPLE_TIMER_PERIOD1, EXAMPLE_TIMER_PERIOD2};
