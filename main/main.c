@@ -165,6 +165,7 @@ int count_steps()
         // vTaskDelay(1 / portTICK_PERIOD_MS);
         // gpio_set_level(STEP_PIN, 0);
         // vTaskDelay(1 / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
     
     ESP_LOGI(TAG, "LS1 alcanzado, iniciando conteo hacia LS2...");
@@ -179,6 +180,7 @@ int count_steps()
         // gpio_set_level(STEP_PIN, 0);
         // vTaskDelay(1 / portTICK_PERIOD_MS);
         // step_count++;
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
     
     ESP_LOGI(TAG, "LS2 alcanzado. Total de pasos: %d", step_count);
