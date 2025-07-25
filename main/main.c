@@ -16,6 +16,22 @@
 
 static const char *TAG = "MOTOR";
 
+// Variables para interrupciones
+static volatile bool ls1_triggered = false;
+static volatile bool ls2_triggered = false;
+
+// ISR para LS1
+static void IRAM_ATTR ls1_isr_handler(void* arg)
+{
+    ls1_triggered = true;
+}
+
+// ISR para LS2
+static void IRAM_ATTR ls2_isr_handler(void* arg)
+{
+    ls2_triggered = true;
+}
+
 void setup_gpio()
 {
     ESP_LOGI(TAG, "Initialize Limit Switch GPIOs");
@@ -23,8 +39,15 @@ void setup_gpio()
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask = (1ULL << LS1_PIN) | (1ULL << LS2_PIN);
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    io_conf.intr_type = GPIO_INTR_NEGEDGE; // Interrupción en flanco descendente
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
+    // Instalar el servicio de interrupciones GPIO
+    ESP_ERROR_CHECK(gpio_install_isr_service(0));
+    
+    // Añadir manejadores de interrupción
+    ESP_ERROR_CHECK(gpio_isr_handler_add(LS1_PIN, ls1_isr_handler, (void*) LS1_PIN));
+    ESP_ERROR_CHECK(gpio_isr_handler_add(LS2_PIN, ls2_isr_handler, (void*) LS2_PIN));
 
     // Init Motor Ports
     ESP_LOGI(TAG, "Initialize MCPWM GPIOs");
@@ -102,34 +125,27 @@ int count_steps()
 {
     int step_count = 0;
     
+    // Reset flags
+    ls1_triggered = false;
+    ls2_triggered = false;
+    
     // Primero ir hacia LS1
     ESP_LOGI(TAG, "Buscando LS1...");
-    // gpio_set_level(DIR_PIN, false); // Dirección hacia LS1
+    // Dirección hacia LS1
     
-    while (gpio_get_level(LS1_PIN) == 0) { // Cambiado: mientras NO esté presionado
-        // gpio_set_level(STEP_PIN, 1);
-        // vTaskDelay(1 / portTICK_PERIOD_MS);
-        // gpio_set_level(STEP_PIN, 0);
-        // vTaskDelay(1 / portTICK_PERIOD_MS);
+    while (!ls1_triggered) { // Esperar hasta que se active la interrupción
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    
-    ESP_LOGI(TAG, "LS1 alcanzado, iniciando conteo hacia LS2...");
+    ESP_LOGI(TAG, "LS1 alcanzado por interrupción, iniciando conteo hacia LS2...");
     
     // Ahora contar pasos desde LS1 hacia LS2
-    // gpio_set_level(DIR_PIN, true); // Dirección hacia LS2
-    // vTaskDelay(50 / portTICK_PERIOD_MS); // Pequeña pausa para salir de LS1
+    // Invertir dirección hacia LS2
     
-    while (gpio_get_level(LS2_PIN) == 0) { // Cambiado: mientras NO esté presionado
-        // gpio_set_level(STEP_PIN, 1);
-        // vTaskDelay(1 / portTICK_PERIOD_MS);
-        // gpio_set_level(STEP_PIN, 0);
-        // vTaskDelay(1 / portTICK_PERIOD_MS);
-        // step_count++;
+    while (!ls2_triggered) { // Esperar hasta que se active la interrupción
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     
-    ESP_LOGI(TAG, "LS2 alcanzado. Total de pasos: %d", step_count);
+    ESP_LOGI(TAG, "LS2 alcanzado por interrupción. Total de pasos: %d", step_count);
     return step_count;
 }
 
