@@ -19,11 +19,19 @@ static const char *TAG = "MOTOR";
 // Variables para interrupciones
 static volatile bool ls1_triggered = false;
 static volatile bool ls2_triggered = false;
+static volatile int pulse_count = 0; // Contador de pulsos
+
+// Callback para contar pulsos PWM
+static bool IRAM_ATTR on_pwm_compare_event(mcpwm_cmpr_handle_t cmpr, const mcpwm_compare_event_data_t *edata, void *user_ctx)
+{
+    pulse_count++; // Incrementar contador en cada pulso
+    return false; // No hay necesidad de despertar tareas de mayor prioridad
+}
 
 // ISR para LS1
 static void IRAM_ATTR ls1_isr_handler(void* arg)
 {
-    ls1_triggered = true;
+        ls1_triggered = true;
 }
 
 // ISR para LS2
@@ -93,6 +101,12 @@ void start_pwm()
     // init compare for each comparator
     ESP_ERROR_CHECK(mcpwm_comparator_set_compare_value(comparator, compare_period));
 
+    // Registrar callback para contar pulsos
+    mcpwm_comparator_event_callbacks_t cbs = {
+        .on_reach = on_pwm_compare_event,
+    };
+    ESP_ERROR_CHECK(mcpwm_comparator_register_event_callbacks(comparator, &cbs, NULL));
+
     ESP_LOGI(TAG, "Create generator");
     mcpwm_gen_handle_t generator;
     mcpwm_generator_config_t gen_config = {};
@@ -146,7 +160,7 @@ int count_steps()
     }
     
     ESP_LOGI(TAG, "LS2 alcanzado por interrupción. Total de pasos: %d", step_count);
-    return step_count;
+    return pulse_count; // Retornar el número de pulsos contados
 }
 
 void app_main(void)
