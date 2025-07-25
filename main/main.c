@@ -29,25 +29,10 @@ void setup_gpio()
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
 
-    gpio_set_level(EN_PIN, 0); // Enable driver
+    gpio_set_level(EN_PIN, 1); // Enable driver
 }
 
-void step_motor(int steps, bool dir)
-{
-    gpio_set_level(DIR_PIN, dir);
-    for (int i = 0; i < steps; ++i)
-    {
-        if (gpio_get_level(LS1_PIN) == 0 || gpio_get_level(LS2_PIN) == 0)
-            break; // Stop if any limit switch is pressed
-
-        gpio_set_level(STEP_PIN, 1);
-        vTaskDelay(1 / portTICK_PERIOD_MS);
-        gpio_set_level(STEP_PIN, 0);
-        vTaskDelay(1 / portTICK_PERIOD_MS);
-    }
-}
-
-int count_steps_ls1_to_ls2()
+int count_steps()
 {
     int step_count = 0;
     
@@ -55,7 +40,7 @@ int count_steps_ls1_to_ls2()
     ESP_LOGI(TAG, "Buscando LS1...");
     gpio_set_level(DIR_PIN, false); // Dirección hacia LS1
     
-    while (gpio_get_level(LS1_PIN) != 0) {
+    while (gpio_get_level(LS1_PIN) == 0) { // Cambiado: mientras NO esté presionado
         gpio_set_level(STEP_PIN, 1);
         vTaskDelay(1 / portTICK_PERIOD_MS);
         gpio_set_level(STEP_PIN, 0);
@@ -68,7 +53,7 @@ int count_steps_ls1_to_ls2()
     gpio_set_level(DIR_PIN, true); // Dirección hacia LS2
     vTaskDelay(50 / portTICK_PERIOD_MS); // Pequeña pausa para salir de LS1
     
-    while (gpio_get_level(LS2_PIN) != 0) {
+    while (gpio_get_level(LS2_PIN) == 0) { // Cambiado: mientras NO esté presionado
         gpio_set_level(STEP_PIN, 1);
         vTaskDelay(1 / portTICK_PERIOD_MS);
         gpio_set_level(STEP_PIN, 0);
@@ -85,14 +70,6 @@ void app_main(void)
     setup_gpio();
     
     // Contar pasos entre limit switches
-    int total_steps = count_steps_ls1_to_ls2();
+    int total_steps = count_steps();
     ESP_LOGI(TAG, "Pasos totales entre LS1 y LS2: %d", total_steps);
-
-    while (true)
-    {
-        step_motor(200, true); // Move 200 steps forward
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        step_motor(200, false); // Move 200 steps backward
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
 }
