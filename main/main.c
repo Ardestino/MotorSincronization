@@ -66,6 +66,11 @@ void setup_gpio()
                         BIT(EXAMPLE_GEN_ENA0),
     };
     ESP_ERROR_CHECK(gpio_config(&gen_gpio_conf));
+    
+    // Inicializar pines DIR y ENA en estado bajo
+    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 0));
+    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_ENA0, 0));
+    ESP_LOGI(TAG, "DIR and ENA pins initialized to LOW state");
 }
 
 void start_pwm()
