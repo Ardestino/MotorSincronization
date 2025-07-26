@@ -144,8 +144,6 @@ void start_pwm()
 
 int count_steps()
 {
-    int step_count = 0;
-    
     // Reset flags
     ls1_triggered = false;
     ls2_triggered = false;
@@ -160,13 +158,13 @@ int count_steps()
     ESP_LOGI(TAG, "LS1 alcanzado por interrupción, iniciando conteo hacia LS2...");
     
     // Ahora contar pasos desde LS1 hacia LS2
-    // Invertir dirección hacia LS2
+    pulse_count = 0;
     
     while (!ls2_triggered) { // Esperar hasta que se active la interrupción
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     
-    ESP_LOGI(TAG, "LS2 alcanzado por interrupción. Total de pasos: %d", step_count);
+    ESP_LOGI(TAG, "LS2 alcanzado por interrupción. Total de pasos: %d", pulse_count);
     return pulse_count; // Retornar el número de pulsos contados
 }
 
