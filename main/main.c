@@ -32,12 +32,14 @@ static bool IRAM_ATTR on_pwm_compare_event(mcpwm_cmpr_handle_t cmpr, const mcpwm
 static void IRAM_ATTR ls1_isr_handler(void* arg)
 {
         ls1_triggered = true;
+    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 1));
 }
 
 // ISR para LS2
 static void IRAM_ATTR ls2_isr_handler(void* arg)
 {
     ls2_triggered = true;
+    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 0));
 }
 
 void setup_gpio()
@@ -69,7 +71,7 @@ void setup_gpio()
     
     // Inicializar pines DIR y ENA en estado bajo
     ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 0));
-    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_ENA0, 0));
+    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_ENA0, 1));
     ESP_LOGI(TAG, "DIR and ENA pins initialized to LOW state");
 }
 
