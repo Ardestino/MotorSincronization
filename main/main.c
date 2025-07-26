@@ -6,7 +6,7 @@
 #include "freertos/task.h"
 
 #define EXAMPLE_TIMER_RESOLUTION_HZ 1000000 // 1MHz, 1us per tick
-#define EXAMPLE_TIMER_PERIOD0 3000 // 1000 ticks, 1ms
+#define EXAMPLE_TIMER_PERIOD0 1000 // 1000 ticks, 1ms
 #define EXAMPLE_TIMER_UPPERIOD0 (EXAMPLE_TIMER_PERIOD0 / 2) // 50% duty cycle
 #define EXAMPLE_GEN_STP0 22 // Verde
 #define EXAMPLE_GEN_DIR0 21 // Amarillo
@@ -31,7 +31,7 @@ static bool IRAM_ATTR on_pwm_compare_event(mcpwm_cmpr_handle_t cmpr, const mcpwm
 // ISR para LS1
 static void IRAM_ATTR ls1_isr_handler(void* arg)
 {
-        ls1_triggered = true;
+    ls1_triggered = true;
     ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 1));
 }
 
