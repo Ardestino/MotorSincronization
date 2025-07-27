@@ -6,13 +6,13 @@
 #include "freertos/task.h"
 
 #define EXAMPLE_TIMER_RESOLUTION_HZ 1000000 // 1MHz, 1us per tick
-#define EXAMPLE_TIMER_PERIOD0 1000 // 1000 ticks, 1ms
+#define EXAMPLE_TIMER_PERIOD0 100 // 1000 ticks, 1ms
 #define EXAMPLE_TIMER_UPPERIOD0 (EXAMPLE_TIMER_PERIOD0 / 2) // 50% duty cycle
-#define EXAMPLE_GEN_STP0 22 // Verde
-#define EXAMPLE_GEN_DIR0 21 // Amarillo
-#define EXAMPLE_GEN_ENA0 23 // Azul
-#define LS1_PIN 18
-#define LS2_PIN 19
+#define EXAMPLE_GEN_STP0 23 // Verde
+#define EXAMPLE_GEN_DIR0 22 // Amarillo
+#define EXAMPLE_GEN_ENA0 21 // Azul
+#define LS1_PIN 19
+#define LS2_PIN 18
 
 static const char *TAG = "MOTOR";
 
