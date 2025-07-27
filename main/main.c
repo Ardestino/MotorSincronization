@@ -159,6 +159,8 @@ int count_steps()
     
     // Ahora contar pasos desde LS1 hacia LS2
     pulse_count = 0;
+    ls1_triggered = false;
+    ls2_triggered = false;
     
     while (!ls2_triggered) { // Esperar hasta que se active la interrupción
         vTaskDelay(pdMS_TO_TICKS(10));
