@@ -2,6 +2,7 @@
 #include "driver/gpio.h"
 #include "driver/mcpwm_prelude.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -13,6 +14,7 @@
 #define EXAMPLE_GEN_ENA0 21 // Azul
 #define LS1_PIN 19
 #define LS2_PIN 18
+#define DEBOUNCE_TIME_US 50000 // 50ms debounce time in microseconds
 
 static const char *TAG = "MOTOR";
 
@@ -20,6 +22,8 @@ static const char *TAG = "MOTOR";
 static volatile bool ls1_triggered = false;
 static volatile bool ls2_triggered = false;
 static volatile int pulse_count = 0; // Contador de pulsos
+static volatile int64_t last_ls1_time = 0; // Último tiempo de interrupción LS1
+static volatile int64_t last_ls2_time = 0; // Último tiempo de interrupción LS2
 
 // Callback para contar pulsos PWM
 static bool IRAM_ATTR on_pwm_compare_event(mcpwm_cmpr_handle_t cmpr, const mcpwm_compare_event_data_t *edata, void *user_ctx)
@@ -31,15 +35,27 @@ static bool IRAM_ATTR on_pwm_compare_event(mcpwm_cmpr_handle_t cmpr, const mcpwm
 // ISR para LS1
 static void IRAM_ATTR ls1_isr_handler(void* arg)
 {
-    ls1_triggered = true;
-    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 1));
+    int64_t current_time = esp_timer_get_time();
+    
+    // Implementar debounce
+    if (current_time - last_ls1_time > DEBOUNCE_TIME_US) {
+        ls1_triggered = true;
+        gpio_set_level(EXAMPLE_GEN_DIR0, 1);
+        last_ls1_time = current_time;
+    }
 }
 
 // ISR para LS2
 static void IRAM_ATTR ls2_isr_handler(void* arg)
 {
-    ls2_triggered = true;
-    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 0));
+    int64_t current_time = esp_timer_get_time();
+    
+    // Implementar debounce
+    if (current_time - last_ls2_time > DEBOUNCE_TIME_US) {
+        ls2_triggered = true;
+        gpio_set_level(EXAMPLE_GEN_DIR0, 0);
+        last_ls2_time = current_time;
+    }
 }
 
 void setup_gpio()
