@@ -55,6 +55,9 @@ extern "C" void app_main(void)
 {
     ESP_LOGI(TAG, "Iniciando aplicación...");
     Motor motor_q1(Q1_DIR, Q1_STP, Q1_ENA);
+    Motor motor_q2(Q2_DIR, Q2_STP, Q2_ENA);
+    Motor motor_q3(Q3_DIR, Q3_STP, Q3_ENA);
+    Motor motor_q4(Q4_DIR, Q4_STP, Q4_ENA);
 
     count_steps();
 }
