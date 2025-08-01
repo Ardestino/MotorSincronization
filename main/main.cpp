@@ -56,14 +56,5 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, "Iniciando aplicación...");
     Motor motor_q1(Q1_DIR, Q1_STP, Q1_ENA);
 
-    // start_pwm();
-
     count_steps();
-
-    // // Contar pasos entre limit switches
-    // int total_steps = count_steps();
-    // ESP_LOGI(TAG, "Pasos totales entre LS1 y LS2: %d", total_steps);
-
-    // std::cout << "Hello, World!" << std::endl;
-    // example();
 }
