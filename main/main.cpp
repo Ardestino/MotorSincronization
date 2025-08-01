@@ -13,9 +13,9 @@
 #define EXAMPLE_TIMER_RESOLUTION_HZ 1000000                 // 1MHz, 1us per tick
 #define EXAMPLE_TIMER_PERIOD0 100                           // 1000 ticks, 1ms
 #define EXAMPLE_TIMER_UPPERIOD0 (EXAMPLE_TIMER_PERIOD0 / 2) // 50% duty cycle
-const gpio_num_t EXAMPLE_GEN_STP0 = GPIO_NUM_23;            // Verde
-const gpio_num_t EXAMPLE_GEN_DIR0 = GPIO_NUM_22;            // Amarillo
-const gpio_num_t EXAMPLE_GEN_ENA0 = GPIO_NUM_21;            // Azul
+const gpio_num_t EXAMPLE_GEN_DIR0 = GPIO_NUM_23;            // Azul
+const gpio_num_t EXAMPLE_GEN_STP0 = GPIO_NUM_22;            // Morado
+const gpio_num_t EXAMPLE_GEN_ENA0 = GPIO_NUM_21;            // Gris
 const gpio_num_t LS1_PIN = GPIO_NUM_19;
 #define DEBOUNCE_TIME_US 50000 // 100ms debounce time in microseconds
 
