@@ -29,7 +29,7 @@ public:
 
         // Inicializar pines DIR y ENA en estado bajo
         ESP_ERROR_CHECK(gpio_set_level(dir_pin, 0));
-        ESP_ERROR_CHECK(gpio_set_level(ena_pin, 1));
+        ESP_ERROR_CHECK(gpio_set_level(ena_pin, 0));
         ESP_LOGI(MOTOR_TAG, "DIR and ENA pins initialized to LOW state");
     }
     ~Motor() {}
@@ -40,7 +40,7 @@ public:
     }
     void set_enable(bool enable)
     {
-        ESP_ERROR_CHECK(gpio_set_level(ena_pin, enable ? 0 : 1)); // LOW to enable, HIGH to disable
+        ESP_ERROR_CHECK(gpio_set_level(ena_pin, enable ? 1 : 0)); // LOW to enable, HIGH to disable
         ESP_LOGI(MOTOR_TAG, "Motor %s", enable ? "enabled" : "disabled");
     }
 };
