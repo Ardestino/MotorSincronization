@@ -1,5 +1,4 @@
-idf_component_register(SRCS "main.cpp" "esp_rest_main.c"
-                            "rest_server.c"
+idf_component_register(SRCS "main.cpp"
                     INCLUDE_DIRS "." "./include")
 
 if(CONFIG_EXAMPLE_WEB_DEPLOY_SF)
