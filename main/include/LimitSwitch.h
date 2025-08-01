@@ -1,4 +1,5 @@
 #pragma once
+#include "config.h"
 
 #define DEBOUNCE_TIME_US 50000 // 100ms debounce time in microseconds
 static volatile bool ls_triggered = false;
@@ -29,7 +30,25 @@ class LimitSwitch
 private:
     int pin;
     bool state;
+
 public:
-    LimitSwitch(/* args */) {}
+    LimitSwitch(/* args */)
+    {
+        // ESP_LOGI(TAG, "Initialize Limit Switch GPIOs");
+        gpio_config_t io_conf = {
+            .pin_bit_mask = (1ULL << Q1_LSW),
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_NEGEDGE, // Interrupción en flanco descendente
+        };
+        ESP_ERROR_CHECK(gpio_config(&io_conf));
+
+        // Instalar el servicio de interrupciones GPIO
+        ESP_ERROR_CHECK(gpio_install_isr_service(0));
+
+        // Añadir manejadores de interrupción
+        ESP_ERROR_CHECK(gpio_isr_handler_add(Q1_LSW, ls1_isr_handler, (void *)Q1_LSW));
+    }
     ~LimitSwitch() {}
 };
