@@ -2,7 +2,8 @@
 
 #define DEBOUNCE_TIME_US 50000
 
-static void IRAM_ATTR ls1_isr_handler(void *arg);
+// Declaración forward de la función ISR (SIN IRAM_ATTR)
+void ls1_isr_handler(void *arg);
 
 class LimitSwitch
 {
@@ -11,6 +12,9 @@ private:
     gpio_num_t pin;
     volatile bool ls_triggered;
     volatile int64_t last_trigger_time;
+
+    // Declarar la función ISR como friend (SIN IRAM_ATTR)
+    friend void ls1_isr_handler(void *arg);
 
 public:
     LimitSwitch(const char *name, gpio_num_t pin) 
@@ -43,24 +47,23 @@ public:
     void triggered(bool value) { ls_triggered = value; }
 };
 
-// ISR handler - DESPUÉS de la definición de la clase
-static void IRAM_ATTR ls1_isr_handler(void *arg)
+void IRAM_ATTR ls1_isr_handler(void *arg)
 {
     int64_t current_time = esp_timer_get_time();
     LimitSwitch* limit_switch = (LimitSwitch*)arg;
     
-    // Usar los métodos de la instancia, no variables globales
+    // Acceso directo a miembros privados gracias a friend
     if (limit_switch->checkDebounce(current_time))
     {
-        int pin_level = gpio_get_level(limit_switch->getPin());
+        int pin_level = gpio_get_level(limit_switch->pin); // Acceso directo al miembro privado
         
         if (pin_level == 0) // Flanco descendente
         {
-            bool new_state = !limit_switch->triggered();
-            limit_switch->triggered(new_state);
+            bool new_state = !limit_switch->ls_triggered; // Acceso directo al miembro privado
+            limit_switch->ls_triggered = new_state; // Acceso directo al miembro privado
             
             esp_rom_printf("LS %s triggered %s at time: %lld\n", 
-                          limit_switch->getName(), 
+                          limit_switch->name, // Acceso directo al miembro privado
                           new_state ? "true" : "false", 
                           current_time);
         }
