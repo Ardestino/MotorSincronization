@@ -1,1 +1,4 @@
 build/
+front/web-demo/node_modules/
+front/web-demo/dist/
+managed_components/

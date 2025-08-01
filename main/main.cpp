@@ -8,6 +8,7 @@
 #include "LimitSwitch.h"
 #include "Motor.h"
 #include "Axis.h"
+#include "esp_rest_main.h"
 
 static const char *TAG = "MAIN";
 
@@ -18,6 +19,9 @@ extern "C" void app_main(void)
     // Configuracion del sistema
     // Instalar el servicio de interrupciones GPIO
     ESP_ERROR_CHECK(gpio_install_isr_service(0));
+
+    // Inicializar el servidor REST
+    init_server();
 
     Motor motor_q1(Q1_DIR, Q1_STP, Q1_ENA);
     Motor motor_q2(Q2_DIR, Q2_STP, Q2_ENA);
