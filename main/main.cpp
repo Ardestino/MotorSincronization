@@ -1,6 +1,8 @@
 #include <iostream>
 #include <stdbool.h>
-#include "driver/gpio.h"
+
+#include "config.h"
+
 #include "driver/mcpwm_prelude.h"
 #include "sync_example.h"
 #include "sync_pwm.h"
@@ -13,10 +15,7 @@
 #define EXAMPLE_TIMER_RESOLUTION_HZ 1000000                 // 1MHz, 1us per tick
 #define EXAMPLE_TIMER_PERIOD0 100                           // 1000 ticks, 1ms
 #define EXAMPLE_TIMER_UPPERIOD0 (EXAMPLE_TIMER_PERIOD0 / 2) // 50% duty cycle
-const gpio_num_t EXAMPLE_GEN_DIR0 = GPIO_NUM_23;            // Azul
-const gpio_num_t EXAMPLE_GEN_STP0 = GPIO_NUM_22;            // Morado
-const gpio_num_t EXAMPLE_GEN_ENA0 = GPIO_NUM_21;            // Gris
-const gpio_num_t LS1_PIN = GPIO_NUM_19;
+
 #define DEBOUNCE_TIME_US 50000 // 100ms debounce time in microseconds
 
 static const char *TAG = "MOTOR";
@@ -40,7 +39,7 @@ static void IRAM_ATTR ls1_isr_handler(void *arg)
     int64_t current_time = esp_timer_get_time();
 
     // Verificar el estado actual del pin para confirmar el flanco
-    int pin_level = gpio_get_level(LS1_PIN);
+    int pin_level = gpio_get_level(Q1_LSW);
 
     // Solo procesar si es realmente un flanco ascendente (pin en HIGH)
     if (pin_level == 0 && (current_time - last_ls1_time > DEBOUNCE_TIME_US))
@@ -57,7 +56,7 @@ void setup_gpio()
 {
     ESP_LOGI(TAG, "Initialize Limit Switch GPIOs");
     gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << LS1_PIN),
+        .pin_bit_mask = (1ULL << Q1_LSW),
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -69,12 +68,12 @@ void setup_gpio()
     ESP_ERROR_CHECK(gpio_install_isr_service(0));
 
     // Añadir manejadores de interrupción
-    ESP_ERROR_CHECK(gpio_isr_handler_add(LS1_PIN, ls1_isr_handler, (void *)LS1_PIN));
+    ESP_ERROR_CHECK(gpio_isr_handler_add(Q1_LSW, ls1_isr_handler, (void *)Q1_LSW));
 
     // Init Motor Ports
     ESP_LOGI(TAG, "Initialize MCPWM GPIOs");
     gpio_config_t gen_gpio_conf = {
-        .pin_bit_mask = BIT(EXAMPLE_GEN_STP0) | BIT(EXAMPLE_GEN_DIR0) | BIT(EXAMPLE_GEN_ENA0),
+        .pin_bit_mask = BIT(Q1_STP) | BIT(Q1_DIR) | BIT(Q1_ENA),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -83,8 +82,8 @@ void setup_gpio()
     ESP_ERROR_CHECK(gpio_config(&gen_gpio_conf));
 
     // Inicializar pines DIR y ENA en estado bajo
-    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 0));
-    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_ENA0, 1));
+    ESP_ERROR_CHECK(gpio_set_level(Q1_DIR, 0));
+    ESP_ERROR_CHECK(gpio_set_level(Q1_ENA, 1));
     ESP_LOGI(TAG, "DIR and ENA pins initialized to LOW state");
 }
 
@@ -147,7 +146,7 @@ void start_pwm()
     ESP_LOGI(TAG, "Create generator");
     mcpwm_gen_handle_t generator;
     mcpwm_generator_config_t gen_config = {};
-    gen_config.gen_gpio_num = EXAMPLE_GEN_STP0;
+    gen_config.gen_gpio_num = Q1_STP;
     ESP_ERROR_CHECK(mcpwm_new_generator(op, &gen_config, &generator));
 
     ESP_LOGI(TAG, "Set generator actions on timer and compare event");
@@ -171,7 +170,7 @@ void start_pwm()
 void count_steps()
 {
     // Primero ir hacia LS1
-    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 0));
+    ESP_ERROR_CHECK(gpio_set_level(Q1_DIR, 0));
     ESP_LOGI(TAG, "Buscando LS1...");
     while (true)
     {
@@ -184,7 +183,7 @@ void count_steps()
 
         // Ahora contar pasos desde LS1 hacia LS2
         pulse_count = 0;
-        ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 1)); // Habilitar el generador
+        ESP_ERROR_CHECK(gpio_set_level(Q1_DIR, 1)); // Habilitar el generador
 
         // Invertir direccion y esperar a que se suelte el push button
         while (ls_triggered)
@@ -200,7 +199,7 @@ void count_steps()
         ESP_LOGI(TAG, "LS2 alcanzado por interrupción. Total de pasos: %d", pulse_count);
 
         // Invertir direccion y esperar a que se suelte el push button
-        ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_GEN_DIR0, 0)); // Habilitar el generador
+        ESP_ERROR_CHECK(gpio_set_level(Q1_DIR, 0)); // Habilitar el generador
         while (ls_triggered)
         {
             vTaskDelay(pdMS_TO_TICKS(10));
