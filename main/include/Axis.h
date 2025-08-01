@@ -5,50 +5,46 @@
 class Axis
 {
 private:
+    const char *axis_name;
     Motor motor;
-    LimitSwitch limitSwitch; // Assuming LimitSwitch is defined elsewhere
+    LimitSwitch limitSwitch;
+    int pulse_count = 0;
 
 public:
-    Axis(Motor motor, LimitSwitch limitSwitch) : motor(motor), limitSwitch(limitSwitch) {}
+    Axis(const char* name, Motor motor, LimitSwitch limitSwitch) : axis_name(name), motor(motor), limitSwitch(limitSwitch) {}
     ~Axis() {}
-    void count_steps()
+    void auto_home()
     {
-        // // Primero ir hacia LS1
-        // ESP_ERROR_CHECK(gpio_set_level(Q1_DIR, 0));
-        // ESP_LOGI(TAG, "Buscando LS1...");
-        // while (true)
-        // {
+        // Primero ir hacia LS1
+        ESP_LOGI(axis_name, "Buscando LS1...");
+        motor.set_direction(false);
+        motor.set_enable(true);
 
-        //     while (!ls_triggered)
-        //     { // Esperar hasta que se active la interrupción
-        //         vTaskDelay(pdMS_TO_TICKS(10));
-        //     }
-        //     ESP_LOGI(TAG, "LS1 alcanzado por interrupción, iniciando conteo hacia LS2...");
+        // Esperar hasta que se active el limit switch
+        while (!limitSwitch.triggered()){
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        motor.set_enable(false);
+        ESP_LOGI(axis_name, "LS1 alcanzado por interrupción");
+        
+        // Ahora contar pasos desde LS1 hacia LS2
+        pulse_count = 0;
+        motor.set_direction(true); // Invertir dirección para ir hacia LS2
+        motor.set_enable(true); // Habilitar el motor
+        
+        // Esperar a que se suelte el push button
+        while (limitSwitch.triggered())
+        {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        ESP_LOGI(axis_name, "Se solto LS1 correctamente, comenzando conteo hacia LS2...");
 
-        //     // Ahora contar pasos desde LS1 hacia LS2
-        //     pulse_count = 0;
-        //     ESP_ERROR_CHECK(gpio_set_level(Q1_DIR, 1)); // Habilitar el generador
-
-        //     // Invertir direccion y esperar a que se suelte el push button
-        //     while (ls_triggered)
-        //     {
-        //         vTaskDelay(pdMS_TO_TICKS(10));
-        //     }
-        //     ESP_LOGI(TAG, "Se solto LS1 correctamente, comenzando conteo hacia LS2...");
-
-        //     while (!ls_triggered)
-        //     { // Esperar hasta que se active la interrupción
-        //         vTaskDelay(pdMS_TO_TICKS(10));
-        //     }
-        //     ESP_LOGI(TAG, "LS2 alcanzado por interrupción. Total de pasos: %d", pulse_count);
-
-        //     // Invertir direccion y esperar a que se suelte el push button
-        //     ESP_ERROR_CHECK(gpio_set_level(Q1_DIR, 0)); // Habilitar el generador
-        //     while (ls_triggered)
-        //     {
-        //         vTaskDelay(pdMS_TO_TICKS(10));
-        //     }
-        //     ESP_LOGI(TAG, "Se solto LS2 correctamente, comenzando conteo hacia LS1...");
-        // }
+        // Esperar a que llegue a LS2
+        while (!limitSwitch.triggered()){
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        motor.set_enable(false);
+        ESP_LOGI(axis_name, "LS2 alcanzado por interrupción. Total de pasos: %d", pulse_count);
+        ESP_LOGI(axis_name, "Homing completado. Motor deshabilitado.");
     }
 };

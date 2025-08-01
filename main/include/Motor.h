@@ -32,4 +32,14 @@ public:
         ESP_LOGI(MOTOR_TAG, "DIR and ENA pins initialized to LOW state");
     }
     ~Motor() {}
+    void set_direction(bool direction)
+    {
+        ESP_ERROR_CHECK(gpio_set_level(dir_pin, direction ? 1 : 0));
+        ESP_LOGI(MOTOR_TAG, "Motor direction set to %s", direction ? "FORWARD" : "REVERSE");
+    }
+    void set_enable(bool enable)
+    {
+        ESP_ERROR_CHECK(gpio_set_level(ena_pin, enable ? 0 : 1)); // LOW to enable, HIGH to disable
+        ESP_LOGI(MOTOR_TAG, "Motor %s", enable ? "enabled" : "disabled");
+    }
 };
