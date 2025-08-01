@@ -18,7 +18,8 @@ public:
         ESP_LOGI(MOTOR_TAG, "Initialize MCPWM GPIOs");
 
         gpio_config_t io_conf = {
-            .pin_bit_mask = (1ULL << dir_pin) | (1ULL << stp_pin) | (1ULL << ena_pin),
+            // .pin_bit_mask = (1ULL << dir_pin) | (1ULL << stp_pin) | (1ULL << ena_pin),
+            .pin_bit_mask = (1ULL << dir_pin) | (1ULL << ena_pin),
             .mode = GPIO_MODE_OUTPUT,
             .pull_up_en = GPIO_PULLUP_DISABLE,
             .pull_down_en = GPIO_PULLDOWN_DISABLE,
