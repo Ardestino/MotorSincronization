@@ -1,3 +1,4 @@
+#pragma once
 #include "driver/gpio.h"
 
 const gpio_num_t Q1_DIR = GPIO_NUM_23; // Azul
