@@ -4,7 +4,6 @@
 #define DEBOUNCE_TIME_US 50000 // 100ms debounce time in microseconds
 static volatile bool ls_triggered = false;
 static volatile int64_t last_ls1_time = 0; // Último tiempo de interrupción LS1
-static volatile int64_t last_ls2_time = 0; // Último tiempo de interrupción LS2
 
 // ISR para LS1
 static void IRAM_ATTR ls1_isr_handler(void *arg)
@@ -28,15 +27,15 @@ static void IRAM_ATTR ls1_isr_handler(void *arg)
 class LimitSwitch
 {
 private:
-    int pin;
+    gpio_num_t pin;
     bool state;
 
 public:
-    LimitSwitch(/* args */)
+    LimitSwitch(gpio_num_t pin) : pin(pin), state(false)
     {
-        // ESP_LOGI(TAG, "Initialize Limit Switch GPIOs");
+        // Configurar el GPIO del Limit Switch
         gpio_config_t io_conf = {
-            .pin_bit_mask = (1ULL << Q1_LSW),
+            .pin_bit_mask = (1ULL << pin),
             .mode = GPIO_MODE_INPUT,
             .pull_up_en = GPIO_PULLUP_DISABLE,
             .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -44,11 +43,8 @@ public:
         };
         ESP_ERROR_CHECK(gpio_config(&io_conf));
 
-        // Instalar el servicio de interrupciones GPIO
-        ESP_ERROR_CHECK(gpio_install_isr_service(0));
-
-        // Añadir manejadores de interrupción
-        ESP_ERROR_CHECK(gpio_isr_handler_add(Q1_LSW, ls1_isr_handler, (void *)Q1_LSW));
+        // Añadir manejador de interrupción
+        ESP_ERROR_CHECK(gpio_isr_handler_add(pin, ls1_isr_handler, (void *)pin));
     }
     ~LimitSwitch() {}
 };
