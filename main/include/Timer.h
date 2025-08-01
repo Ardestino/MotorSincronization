@@ -8,7 +8,7 @@
 #include "driver/gpio.h"
 
 #define EXAMPLE_TIMER_RESOLUTION_HZ 1000000                 // 1MHz, 1us per tick
-#define EXAMPLE_TIMER_PERIOD0 300                           // 1000 ticks, 1ms
+#define EXAMPLE_TIMER_PERIOD0 2000                           // 1000 ticks, 1ms
 #define EXAMPLE_TIMER_UPPERIOD0 (EXAMPLE_TIMER_PERIOD0 / 2) // 50% duty cycle
 const gpio_num_t EXAMPLE_GEN_STP0 = GPIO_NUM_27;            // Verde
 
