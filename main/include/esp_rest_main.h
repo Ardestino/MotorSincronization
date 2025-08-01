@@ -19,6 +19,7 @@
 #include "mdns.h"
 #include "lwip/apps/netbiosns.h"
 #include "protocol_examples_common.h"
+#include "rest_server.h"
 #if CONFIG_EXAMPLE_WEB_DEPLOY_SD
 #include "driver/sdmmc_host.h"
 #endif
@@ -134,5 +135,5 @@ void init_server(void)
 
     ESP_ERROR_CHECK(example_connect());
     ESP_ERROR_CHECK(init_fs());
-    // ESP_ERROR_CHECK(start_rest_server(CONFIG_EXAMPLE_WEB_MOUNT_POINT));
+    ESP_ERROR_CHECK(start_rest_server(CONFIG_EXAMPLE_WEB_MOUNT_POINT));
 }
