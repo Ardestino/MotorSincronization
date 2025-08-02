@@ -5,9 +5,10 @@
 #include "driver/mcpwm_prelude.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 #define EXAMPLE_TIMER_RESOLUTION_HZ 1000000                 // 1MHz, 1us per tick
-#define EXAMPLE_TIMER_PERIOD0 100                           // 1000 ticks, 1ms
+#define EXAMPLE_TIMER_PERIOD0 2000                           // 1000 ticks, 1ms
 #define EXAMPLE_TIMER_UPPERIOD0 (EXAMPLE_TIMER_PERIOD0 / 2) // 50% duty cycle
 
 static const char *TAG_TIMER = "TIMER";
@@ -23,21 +24,39 @@ static bool IRAM_ATTR on_pwm_compare_event(mcpwm_cmpr_handle_t cmpr, const mcpwm
 class Timer
 {
 private:
-    int resolution_hz;
-    int period0;
-    int upper_period0;
+    uint32_t timer_resolution;   // Resolución del temporizador en Hz
+    uint32_t timer_period;       // Período del temporizador en ticks
+    uint32_t timer_upper_period; // Período superior del temporizador en ticks
+
+    gpio_num_t gen_gpio_num; // GPIO para el generador
+
+    mcpwm_timer_handle_t timer;
+    mcpwm_oper_handle_t op;
 
 public:
-    Timer(int res, int period, int upper_period) : resolution_hz(res), period0(period), upper_period0(upper_period)
+    Timer(gpio_num_t gen_gpio_num) : timer_resolution(EXAMPLE_TIMER_RESOLUTION_HZ),
+               timer_period(EXAMPLE_TIMER_PERIOD0),
+               timer_upper_period(EXAMPLE_TIMER_UPPERIOD0),
+               gen_gpio_num(gen_gpio_num)
     {
+
+        ESP_LOGI(TAG_TIMER, "Initialize MCPWM GPIOs");
+        gpio_config_t gen_gpio_conf = {
+            .pin_bit_mask = BIT(gen_gpio_num),
+            .mode = GPIO_MODE_OUTPUT,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE
+        };
+        ESP_ERROR_CHECK(gpio_config(&gen_gpio_conf));
+
         ESP_LOGI(TAG_TIMER, "Create timer");
-        mcpwm_timer_handle_t timer;
         mcpwm_timer_config_t timer_config = {
             .group_id = 0,
             .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
-            .resolution_hz = EXAMPLE_TIMER_RESOLUTION_HZ,
+            .resolution_hz = timer_resolution,
             .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
-            .period_ticks = EXAMPLE_TIMER_PERIOD0,
+            .period_ticks = timer_period,
             .intr_priority = 0, // Use default priority
             .flags = {
                 .update_period_on_empty = true, // Update period when timer counts to zero
@@ -47,7 +66,6 @@ public:
         ESP_ERROR_CHECK(mcpwm_new_timer(&timer_config, &timer));
 
         ESP_LOGI(TAG_TIMER, "Create operator");
-        mcpwm_oper_handle_t op;
         mcpwm_operator_config_t operator_config = {
             .group_id = 0,      // operator should be in the same group of the above timers
             .intr_priority = 0, // Use default priority
@@ -82,32 +100,12 @@ public:
         mcpwm_comparator_event_callbacks_t cbs = {
             .on_reach = on_pwm_compare_event,
         };
-        ESP_ERROR_CHECK(mcpwm_comparator_register_event_callbacks(comparator, &cbs, NULL));
-    }
-    ~Timer() {}
-    void start()
-    {
-        ESP_LOGI(TAG_TIMER, "Start timer");
-        mcpwm_timer_handle_t timer;
-        ESP_ERROR_CHECK(mcpwm_timer_enable(timer));
-        ESP_ERROR_CHECK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
-        // vTaskDelay(pdMS_TO_TICKS(100)); // Allow some time for the timer to start
-    }
+        ESP_ERROR_CHECK(mcpwm_comparator_register_event_callbacks(comparator, &cbs, (void *)this));
 
-    void stop()
-    {
-        // ESP_LOGI(TAG_TIMER, "Stop timer");
-        // mcpwm_timer_handle_t timer;
-        // ESP_ERROR_CHECK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_NO_START));
-        // ESP_ERROR_CHECK(mcpwm_timer_disable(timer));
-    }
-
-    void create_generator(mcpwm_gen_handle_t generator, mcpwm_oper_handle_t op, mcpwm_cmpr_handle_t comparator)
-    {
         ESP_LOGI(TAG_TIMER, "Create generator");
-        // mcpwm_gen_handle_t generator;
+        mcpwm_gen_handle_t generator;
         mcpwm_generator_config_t gen_config = {};
-        gen_config.gen_gpio_num = Q1_STP;
+        gen_config.gen_gpio_num = gen_gpio_num;
         ESP_ERROR_CHECK(mcpwm_new_generator(op, &gen_config, &generator));
 
         ESP_LOGI(TAG_TIMER, "Set generator actions on timer and compare event");
@@ -115,11 +113,25 @@ public:
             mcpwm_generator_set_action_on_timer_event(
                 generator,
                 // when the timer value is zero, and is counting up, set output to high
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                MCPWM_GEN_TIMER_EVENT_ACTION(
+                    MCPWM_TIMER_DIRECTION_UP, 
+                    MCPWM_TIMER_EVENT_EMPTY, 
+                    MCPWM_GEN_ACTION_HIGH)));
         ESP_ERROR_CHECK(
             mcpwm_generator_set_action_on_compare_event(
                 generator,
                 // when compare event happens, and timer is counting up, set output to low
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator, MCPWM_GEN_ACTION_LOW)));
+                MCPWM_GEN_COMPARE_EVENT_ACTION(
+                    MCPWM_TIMER_DIRECTION_UP, 
+                    comparator, 
+                    MCPWM_GEN_ACTION_LOW)));
+    }
+
+    void start()
+    {
+        ESP_LOGI(TAG_TIMER, "Start timer");
+        ESP_ERROR_CHECK(mcpwm_timer_enable(timer));
+        ESP_ERROR_CHECK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 };

@@ -1,50 +1,71 @@
 #pragma once
-#include "config.h"
 
-#define DEBOUNCE_TIME_US 50000 // 100ms debounce time in microseconds
-static volatile bool ls_triggered = false;
-static volatile int64_t last_ls1_time = 0; // Último tiempo de interrupción LS1
+#define DEBOUNCE_TIME_US 50000
 
-// ISR para LS1
-static void IRAM_ATTR ls1_isr_handler(void *arg)
-{
-    int64_t current_time = esp_timer_get_time();
-
-    // Verificar el estado actual del pin para confirmar el flanco
-    int pin_level = gpio_get_level(Q1_LSW);
-
-    // Solo procesar si es realmente un flanco ascendente (pin en HIGH)
-    if (pin_level == 0 && (current_time - last_ls1_time > DEBOUNCE_TIME_US))
-    {
-        ls_triggered = !ls_triggered;
-        last_ls1_time = current_time;
-
-        // Log seguro para ISR
-        esp_rom_printf("LS %d triggered %s at time: %lld\n", pin_level, ls_triggered ? "true" : "false", current_time);
-    }
-}
+// Declaración forward de la función ISR (SIN IRAM_ATTR)
+void ls1_isr_handler(void *arg);
 
 class LimitSwitch
 {
 private:
+    const char *name;
     gpio_num_t pin;
-    bool state;
+    volatile bool ls_triggered;
+    volatile int64_t last_trigger_time;
+
+    // Declarar la función ISR como friend (SIN IRAM_ATTR)
+    friend void ls1_isr_handler(void *arg);
 
 public:
-    LimitSwitch(gpio_num_t pin) : pin(pin), state(false)
+    LimitSwitch(const char *name, gpio_num_t pin) 
+        : name(name), pin(pin), ls_triggered(false), last_trigger_time(0)
     {
-        // Configurar el GPIO del Limit Switch
         gpio_config_t io_conf = {
             .pin_bit_mask = (1ULL << pin),
             .mode = GPIO_MODE_INPUT,
-            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_up_en = GPIO_PULLUP_ENABLE, // Habilitar pull-up
             .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .intr_type = GPIO_INTR_NEGEDGE, // Interrupción en flanco descendente
+            .intr_type = GPIO_INTR_NEGEDGE,
         };
         ESP_ERROR_CHECK(gpio_config(&io_conf));
-
-        // Añadir manejador de interrupción
-        ESP_ERROR_CHECK(gpio_isr_handler_add(pin, ls1_isr_handler, (void *)pin));
+        ESP_ERROR_CHECK(gpio_isr_handler_add(pin, ls1_isr_handler, (void *)this));
     }
-    ~LimitSwitch() {}
+
+    bool checkDebounce(int64_t current_time)
+    {
+        if (current_time - last_trigger_time > DEBOUNCE_TIME_US)
+        {
+            last_trigger_time = current_time;
+            return true;
+        }
+        return false;
+    }
+
+    const char *getName() const { return name; }
+    gpio_num_t getPin() const { return pin; }
+    bool triggered() { return ls_triggered; }
+    void triggered(bool value) { ls_triggered = value; }
 };
+
+void IRAM_ATTR ls1_isr_handler(void *arg)
+{
+    int64_t current_time = esp_timer_get_time();
+    LimitSwitch* limit_switch = (LimitSwitch*)arg;
+    
+    // Acceso directo a miembros privados gracias a friend
+    if (limit_switch->checkDebounce(current_time))
+    {
+        int pin_level = gpio_get_level(limit_switch->pin); // Acceso directo al miembro privado
+        
+        if (pin_level == 0) // Flanco descendente
+        {
+            bool new_state = !limit_switch->ls_triggered; // Acceso directo al miembro privado
+            limit_switch->ls_triggered = new_state; // Acceso directo al miembro privado
+            
+            esp_rom_printf("LS %s triggered %s at time: %lld\n", 
+                          limit_switch->name, // Acceso directo al miembro privado
+                          new_state ? "true" : "false", 
+                          current_time);
+        }
+    }
+}
